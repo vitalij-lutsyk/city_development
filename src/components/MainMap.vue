@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png')
 })
 import { mapState, mapActions } from 'vuex'
-import { setTimeout } from 'timers';
+import { setTimeout } from 'timers'
 export default {
   computed: {
     ...mapState({
@@ -20,7 +20,7 @@ export default {
       filteredBuildings: state => state.filteredBuildings
     })
   },
-  data () {
+  data() {
     return {
       mapFull: null,
       geojsonLayer: null
@@ -30,25 +30,28 @@ export default {
     ...mapActions({
       changeBBox: 'act_changeBBox'
     }),
-    createMap () {
+    createMap() {
       this.mapFull = L.map('map').setView([49.84, 24.03], 15)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.mapFull)
       this.mapFull.on('dragend', () => {
-        const c = Object.values(this.mapFull.getBounds()).map(arr => {
-          return Object.values(arr).map(val => val)
-        }).flat().join(',')
+        const c = Object.values(this.mapFull.getBounds())
+          .map(arr => {
+            return Object.values(arr).map(val => val)
+          })
+          .flat()
+          .join(',')
         if (this.mapFull.getZoom() >= 13) this.changeBBox(c)
       })
       this.mapFull.on('zoomend', () => {
         if (this.mapFull.getZoom() < 13) this.mapFull.removeLayer(this.geojsonLayer)
       })
     },
-    async initCompositions () {
+    async initCompositions() {
       const builds = await this.filteredBuildings
       const geojson = {
         type: 'FeatureCollection',
         crs: { type: 'name', properties: { name: 'urn:ogc:def:crs:OGC:1.3:CRS84' } },
-        features: [ ...builds ]
+        features: [...builds]
       }
       this.geojsonLayer = L.geoJSON(geojson, {
         style: {
@@ -62,16 +65,16 @@ export default {
     }
   },
   watch: {
-    downloaded (newVal) {
+    downloaded(newVal) {
       if (newVal) {
         this.initCompositions()
       } else {
         this.mapFull.removeLayer(this.geojsonLayer)
         this.geojsonLayer = null
       }
-    },
+    }
   },
-  mounted () {
+  mounted() {
     this.createMap()
   }
 }

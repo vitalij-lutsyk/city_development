@@ -58,7 +58,7 @@ export default {
   methods: {
     ...mapActions({
       getBuildings: 'act_getBuildings'
-  //     // changeBBox: 'act_changeBBox'
+      //     // changeBBox: 'act_changeBBox'
     })
     // createMap () {
     //   this.mapFull = L.map('map').setView([49.84, 24.03], 15)
@@ -133,9 +133,9 @@ export default {
   //     }, 200)
   //   }
   // },
-  created () {
+  created() {
     this.getBuildings()
-  },
+  }
   // mounted () {
   //   this.createMap()
   // }

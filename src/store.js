@@ -21,23 +21,23 @@ export default new Vuex.Store({
   getters: {},
 
   mutations: {
-    mutate_results (state, val) {
+    mutate_results(state, val) {
       state.results = val
     },
-    mutate_downloaded (state, val) {
+    mutate_downloaded(state, val) {
       state.downloaded = val
     },
-    mutate_bbox (state, val) {
+    mutate_bbox(state, val) {
       state.bbox = val
     },
-    mutate_currentFilter (state, val) {
+    mutate_currentFilter(state, val) {
       state.currentFilter = val
     },
-    mutate_buildingYears (state, val) {
+    mutate_buildingYears(state, val) {
       const arr = [...new Set(val.map(el => parseInt(el.tags.start_date)).filter(el => el))]
       state.buildingYears = arr
     },
-    mutate_filteredBuildings (state) {
+    mutate_filteredBuildings(state) {
       state.filteredBuildings = state.results.map(res => {
         if (state.currentFilter >= +res.tags.start_date) {
           return {
@@ -53,12 +53,17 @@ export default new Vuex.Store({
     }
   },
   actions: {
-
     // fetcing buildings
-    act_getBuildings ({ state, commit }) {
-      axios.get(`${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedData}(${state.bbox});${state.sec}(${state.bbox}););${state.endParams};`)
+    act_getBuildings({ state, commit }) {
+      axios
+        .get(
+          `${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedData}(${state.bbox});${state.sec}(${state.bbox}););${state.endParams};`
+        )
         .then(res => {
-          commit('mutate_results', res.data.elements.filter(el => el.type === 'way'))
+          commit(
+            'mutate_results',
+            res.data.elements.filter(el => el.type === 'way')
+          )
           setTimeout(() => {
             commit('mutate_downloaded', true)
           }, 100)
@@ -66,17 +71,17 @@ export default new Vuex.Store({
         .then(() => {
           commit('mutate_buildingYears', state.results)
         })
-        .catch(err => { console.log(err) })
+        .catch(err => console.log(err))
     },
 
     // refresh boundaries & fetching buildings
-    act_changeBBox ({ commit, dispatch }, payload) {
+    act_changeBBox({ commit, dispatch }, payload) {
       commit('mutate_bbox', payload)
       commit('mutate_downloaded', false)
       dispatch('act_getBuildings')
     },
 
-    act_changeCurrentFilter ({ commit }, payload) {
+    act_changeCurrentFilter({ commit }, payload) {
       commit('mutate_currentFilter', payload)
       commit('mutate_filteredBuildings')
     }
