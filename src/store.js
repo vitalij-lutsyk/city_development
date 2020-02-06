@@ -34,7 +34,12 @@ export default new Vuex.Store({
       state.currentFilter = val
     },
     mutate_buildingYears(state, val) {
-      state.buildingYears = [...new Set(val.map(el => parseInt(el.tags.start_date)).filter(el => el))]
+      const unickDates = val
+        .map(el => {
+          return el.tags.start_date.length < 5 ? parseInt(el.tags.start_date) : null
+        })
+        .filter(el => el)
+      state.buildingYears = [...new Set(unickDates)]
     },
     mutate_filteredBuildings(state) {
       state.filteredBuildings = []
