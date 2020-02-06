@@ -34,13 +34,13 @@ export default new Vuex.Store({
       state.currentFilter = val
     },
     mutate_buildingYears(state, val) {
-      const arr = [...new Set(val.map(el => parseInt(el.tags.start_date)).filter(el => el))]
-      state.buildingYears = arr
+      state.buildingYears = [...new Set(val.map(el => parseInt(el.tags.start_date)).filter(el => el))]
     },
     mutate_filteredBuildings(state) {
-      state.filteredBuildings = state.results.map(res => {
+      state.filteredBuildings = []
+      state.results.forEach(res => {
         if (state.currentFilter >= +res.tags.start_date) {
-          return {
+          const filteredItem = {
             type: 'Feature',
             properties: { id: res.id, ...res.tags },
             geometry: {
@@ -48,6 +48,7 @@ export default new Vuex.Store({
               coordinates: [res.geometry.map(node => Object.values(node).reverse())]
             }
           }
+          state.filteredBuildings.push(filteredItem)
         }
       })
     }
@@ -60,17 +61,11 @@ export default new Vuex.Store({
           `${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedData}(${state.bbox});${state.sec}(${state.bbox}););${state.endParams};`
         )
         .then(res => {
-          commit(
-            'mutate_results',
-            res.data.elements.filter(el => el.type === 'way')
-          )
-          setTimeout(() => {
-            commit('mutate_downloaded', true)
-          }, 100)
+          const filteredRes = res.data.elements.filter(el => el.type === 'way')
+          commit('mutate_results', filteredRes)
+          setTimeout(() => commit('mutate_downloaded', true), 100)
         })
-        .then(() => {
-          commit('mutate_buildingYears', state.results)
-        })
+        .then(() => commit('mutate_buildingYears', state.results))
         .catch(err => console.log(err))
     },
 
@@ -85,21 +80,5 @@ export default new Vuex.Store({
       commit('mutate_currentFilter', payload)
       commit('mutate_filteredBuildings')
     }
-
-    // filtering building depends on ranger value
-    // act_filterBuildings ({ state }) {
-    //   return state.results.map(res => {
-    //     if (state.currentFilter >= +res.tags.start_date) {
-    //       return {
-    //         type: 'Feature',
-    //         properties: { id: res.id, ...res.tags },
-    //         geometry: {
-    //           type: 'Polygon',
-    //           coordinates: [res.geometry.map(node => Object.values(node).reverse())]
-    //         }
-    //       }
-    //     }
-    //   })
-    // }
   }
 })

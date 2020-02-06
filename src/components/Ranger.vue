@@ -2,14 +2,13 @@
   <div class="ranger">
     <el-slider
       id="ranger"
-      :value="currentFilter"
+      v-model="filterValue"
       :min="mostOldest"
       :max="mostYoungest"
       :step="rangeStep"
       vertical
       :marks="rangeLabels"
       height="500px"
-      @change="changeCurrentFilter"
     >
     </el-slider>
   </div>
@@ -18,6 +17,11 @@
 <script>
   import { mapState, mapActions } from 'vuex'
   export default {
+    data() {
+      return {
+        filterValue: 0
+      }
+    },
     computed: {
       ...mapState({
         currentFilter: state => state.currentFilter,
@@ -27,9 +31,7 @@
         return Math.min(...this.buildingYears) > 1256 ? Math.min(...this.buildingYears) : 1256
       },
       mostYoungest() {
-        const max = Math.max(...this.buildingYears)
-        this.changeCurrentFilter(max)
-        return max
+        return Math.max(...this.buildingYears)
       },
       rangeStep() {
         return (this.mostYoungest - this.mostOldest) / 20
@@ -47,12 +49,19 @@
     methods: {
       ...mapActions({
         changeCurrentFilter: 'act_changeCurrentFilter'
-      })
+      }),
+      setInitialBuildings() {
+        this.changeCurrentFilter(this.mostYoungest)
+        this.filterValue = this.mostYoungest
+      }
+    },
+    watch: {
+      filterValue(newVal) {
+        this.changeCurrentFilter(newVal)
+      }
+    },
+    created() {
+      this.setInitialBuildings()
     }
-    // data () {
-    //   return {
-    //     years: {}
-    //   }
-    // }
   }
 </script>
