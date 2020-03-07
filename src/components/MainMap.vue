@@ -16,7 +16,7 @@ import { setTimeout } from 'timers'
 export default {
   computed: {
     ...mapState({
-      downloaded: state => state.downloaded,
+      startPoint: state => state.startPoint,
       filteredBuildings: state => state.filteredBuildings
     })
   },
@@ -31,22 +31,24 @@ export default {
       changeBBox: 'act_changeBBox'
     }),
     createMap() {
-      this.mapFull = L.map('map').setView([49.83581380259546, 24.017164707183838], 17)
+      this.mapFull = L.map('map', {renderer: L.canvas()}).setView(this.startPoint, 17)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(this.mapFull)
-      this.mapFull.on('dragend', () => {
-        const c = Object.values(this.mapFull.getBounds())
-          .map(arr => {
-            return Object.values(arr).map(val => val)
-          })
-          .flat()
-          .join(',')
-        if (this.mapFull.getZoom() >= 13) this.changeBBox(c)
-      })
+      this.calculateBBox();
+      this.mapFull.on('dragend', this.calculateBBox)
       this.mapFull.on('zoomend', () => {
         if (this.mapFull.getZoom() < 13) this.mapFull.removeLayer(this.geojsonLayer)
       })
+    },
+    calculateBBox() {
+      const c = Object.values(this.mapFull.getBounds())
+        .map(arr => {
+          return Object.values(arr).map(val => val)
+        })
+        .flat()
+        .join(',')
+      if (this.mapFull.getZoom() >= 13) this.changeBBox(c)
     },
     initCompositions() {
       if (this.mapFull.hasLayer(this.geojsonLayer)) {
