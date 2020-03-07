@@ -5,7 +5,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    startPoint: [49.83581380259546, 24.017164707183838],
+    startPoint: [49.8416169,24.0312634],
     baseUrl: 'https://www.overpass-api.de/api/interpreter',
     expectedType: 'json',
     expectedData: 'way["building"="yes"]["start_date"]',
