@@ -18,12 +18,25 @@ export default {
     ...mapState({
       startPoint: state => state.startPoint,
       filteredBuildings: state => state.filteredBuildings
-    })
+    }),
+    isALotBuildings() {
+      return this.filteredBuildings.length > 1000 && this.mapFull.getZoom() < 16
+    }
   },
   data() {
     return {
       mapFull: null,
-      geojsonLayer: null
+      geojsonLayer: null,
+      buildViewOptions: {
+          style: {
+            color: 'green',
+            fillColor: 'green',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.7,
+            stroke: true
+          }
+        }
     }
   },
   methods: {
@@ -61,15 +74,16 @@ export default {
         crs: { type: 'name', properties: { name: 'urn:ogc:def:crs:OGC:1.3:CRS84' } },
         features: [...builds]
       }
-      this.geojsonLayer = L.geoJSON(geojson, {
-        style: {
-          fillColor: 'green',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.7
-        }
-      })
-      this.geojsonLayer.addTo(this.mapFull)
+      if (!this.isALotBuildings) {
+        this.geojsonLayer = L.geoJSON(geojson, this.buildViewOptions)
+      } else {
+        this.geojsonLayer = L.featureGroup()
+        builds.forEach(build => {
+          const _coord = build.geometry.coordinates[0][0].reverse();
+          new L.circle(_coord, 2, this.buildViewOptions).addTo(this.geojsonLayer)
+        });
+      }
+      this.geojsonLayer.addTo(this.mapFull);
     }
   },
   watch: {

@@ -14,7 +14,7 @@ export default new Vuex.Store({
     endParams: 'out geom',
     results: [],
     downloaded: false,
-    currentFilter: 0,
+    currentFilter: [0,0],
     buildingYears: [],
     filteredBuildings: []
   },
@@ -45,7 +45,7 @@ export default new Vuex.Store({
     mutate_filteredBuildings(state) {
       state.filteredBuildings = []
       state.results.forEach(res => {
-        if (state.currentFilter >= +res.tags.start_date) {
+        if (state.currentFilter[1] >= +res.tags.start_date && state.currentFilter[0] <= +res.tags.start_date) {
           const filteredItem = {
             type: 'Feature',
             properties: { id: res.id, ...res.tags },

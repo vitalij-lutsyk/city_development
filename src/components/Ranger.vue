@@ -7,6 +7,7 @@
       :max="mostYoungest"
       :step="rangeStep"
       vertical
+      range
       :marks="rangeLabels"
       height="500px"
     />
@@ -18,7 +19,7 @@ import { mapState, mapActions } from 'vuex'
 export default {
   data() {
     return {
-      filterValue: 0
+      filterValue: [0,0]
     }
   },
   computed: {
@@ -51,7 +52,8 @@ export default {
     }),
     setInitialBuildings() {
       this.changeCurrentFilter(this.mostYoungest)
-      this.filterValue = this.mostYoungest
+      this.filterValue = [this.mostOldest, this.mostYoungest]
+
     }
   },
   watch: {
