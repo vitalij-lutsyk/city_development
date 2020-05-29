@@ -5,7 +5,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    startPoint: [49.8416169,24.0312634],
+    defaultStartPoint: [49.8416169, 24.0312634],
     baseUrl: 'https://www.overpass-api.de/api/interpreter',
     expectedType: 'json',
     expectedData: 'way["building"="yes"]["start_date"]',
@@ -14,7 +14,7 @@ export default new Vuex.Store({
     endParams: 'out geom',
     results: [],
     downloaded: false,
-    currentFilter: [0,0],
+    currentFilter: [0, 0],
     buildingYears: [],
     filteredBuildings: []
   },
@@ -62,7 +62,7 @@ export default new Vuex.Store({
   actions: {
     // fetcing buildings
     act_getBuildings({ state, commit }) {
-      if (!this.state.bbox) return;
+      if (!this.state.bbox) return
       axios
         .get(
           `${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedData}(${state.bbox});${state.sec}(${state.bbox}););${state.endParams};`

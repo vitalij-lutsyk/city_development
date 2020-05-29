@@ -16,11 +16,28 @@ import { setTimeout } from 'timers'
 export default {
   computed: {
     ...mapState({
-      startPoint: state => state.startPoint,
+      defaultStartPoint: state => state.defaultStartPoint,
       filteredBuildings: state => state.filteredBuildings
     }),
     isALotBuildings() {
       return this.filteredBuildings.length > 1000 && this.mapFull.getZoom() < 16
+    },
+    startLocation() {
+      const urlParametersRegex = /(\?|\&)([^=]+)\=([^&]+)/gi
+      const digitsRegex = /[-]{0,1}[\d]*[.]{0,1}[\d]+/g
+      if (!window.location.search) {
+        return {
+          lat: this.defaultStartPoint[0],
+          lng: this.defaultStartPoint[1],
+          z: 17
+        }
+      }
+      const [lat, lng, z] = window.location.search.match(urlParametersRegex)
+      return {
+        lat: +lat.match(digitsRegex)[0],
+        lng: +lng.match(digitsRegex)[0],
+        z: +z.match(digitsRegex)[0]
+      }
     }
   },
   data() {
@@ -28,15 +45,15 @@ export default {
       mapFull: null,
       geojsonLayer: null,
       buildViewOptions: {
-          style: {
-            color: 'green',
-            fillColor: 'green',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.7,
-            stroke: true
-          }
+        style: {
+          color: 'green',
+          fillColor: 'green',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.7,
+          stroke: true
         }
+      }
     }
   },
   methods: {
@@ -44,24 +61,37 @@ export default {
       changeBBox: 'act_changeBBox'
     }),
     createMap() {
-      this.mapFull = L.map('map', {renderer: L.canvas()}).setView(this.startPoint, 17)
+      const { lat, lng, z } = this.startLocation
+      this.mapFull = L.map('map', { renderer: L.canvas() }).setView([lat, lng], z)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(this.mapFull)
-      this.calculateBBox();
-      this.mapFull.on('dragend', this.calculateBBox)
-      this.mapFull.on('zoomend', () => {
-        if (this.mapFull.getZoom() < 13) this.mapFull.removeLayer(this.geojsonLayer)
-      })
+      this.updateUrlCoordinates()
+      this.changeBBox(this.calculateBBoxBounds())
+      this.mapFull.on('dragend', this.handleMapMove)
+      this.mapFull.on('zoomend', this.handleMapZoom)
     },
-    calculateBBox() {
-      const c = Object.values(this.mapFull.getBounds())
+    handleMapZoom() {
+      this.updateUrlCoordinates()
+      if (this.mapFull.getZoom() < 13) this.mapFull.removeLayer(this.geojsonLayer)
+    },
+    handleMapMove() {
+      this.updateUrlCoordinates()
+      if (this.mapFull.getZoom() <= 13) return
+      this.changeBBox(this.calculateBBoxBounds())
+    },
+    updateUrlCoordinates() {
+      const { lat, lng } = this.mapFull.getCenter()
+      const searchString = `?lat=${lat}&lng=${lng}&z=${this.mapFull.getZoom()}`
+      history.pushState({}, null, this.$route.path + searchString)
+    },
+    calculateBBoxBounds() {
+      return Object.values(this.mapFull.getBounds())
         .map(arr => {
           return Object.values(arr).map(val => val)
         })
         .flat()
         .join(',')
-      if (this.mapFull.getZoom() >= 13) this.changeBBox(c)
     },
     initCompositions() {
       if (this.mapFull.hasLayer(this.geojsonLayer)) {
@@ -79,11 +109,11 @@ export default {
       } else {
         this.geojsonLayer = L.featureGroup()
         builds.forEach(build => {
-          const _coord = build.geometry.coordinates[0][0].reverse();
+          const _coord = build.geometry.coordinates[0][0].reverse()
           new L.circle(_coord, 2, this.buildViewOptions).addTo(this.geojsonLayer)
-        });
+        })
       }
-      this.geojsonLayer.addTo(this.mapFull);
+      this.geojsonLayer.addTo(this.mapFull)
     }
   },
   watch: {
