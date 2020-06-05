@@ -24,6 +24,7 @@
     "@vue/eslint-config-standard": "^5.1.2",
     "babel-eslint": "^10.1.0",
     "babel-plugin-component": "^1.1.1",
+    "@babel/compat-data": "~7.9.0",
     "eslint": "^6.8.0",
     "eslint-plugin-vue": "^6.2.1",
     "node-sass": "^4.14.1",
