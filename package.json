@@ -9,27 +9,27 @@
   },
   "dependencies": {
     "axios": "^0.19.2",
-    "core-js": "^3.6.4",
-    "element-ui": "^2.13.0",
-    "leaflet": "^1.6.0",
-    "vue": "^2.6.11",
-    "vue-router": "^3.1.6",
-    "vue-spinner": "^1.0.3",
-    "vuex": "^3.1.2"
+    "core-js": "^3.6.5",
+    "element-ui": "^2.13.2",
+    "leaflet": "^1.7.1",
+    "vue": "^2.6.12",
+    "vue-router": "^3.4.6",
+    "vue-spinner": "^1.0.4",
+    "vuex": "^3.5.1"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^4.2.3",
-    "@vue/cli-plugin-eslint": "^4.2.3",
-    "@vue/cli-service": "^4.2.3",
+    "@babel/compat-data": "~7.9.0",
+    "@vue/cli-plugin-babel": "^4.5.7",
+    "@vue/cli-plugin-eslint": "^4.5.7",
+    "@vue/cli-service": "^4.5.7",
     "@vue/eslint-config-standard": "^5.1.2",
     "babel-eslint": "^10.1.0",
     "babel-plugin-component": "^1.1.1",
-    "@babel/compat-data": "~7.9.0",
     "eslint": "^6.8.0",
-    "eslint-plugin-vue": "^6.2.1",
+    "eslint-plugin-vue": "^6.2.2",
     "node-sass": "^4.14.1",
     "sass-loader": "^8.0.2",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.12"
   },
   "eslintConfig": {
     "root": true,
