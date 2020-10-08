@@ -106,6 +106,27 @@ export default {
       }
       if (!this.isALotBuildings) {
         this.geojsonLayer = L.geoJSON(geojson, this.buildViewOptions)
+          .bindPopup((layer) => {
+            const {
+              ['addr:housenumber']: housenumber,
+              ['addr:street']: street,
+              name,
+              start_date,
+              wikipedia
+            } = layer.feature.properties;
+            const popupLayout =
+              `<div>
+                ${name ? (`<p>${name}</p>`) : ''}
+                <p>${street}, ${housenumber}</p>
+                ${
+                  wikipedia ?
+                  (`<p><a href="https://wikipedia.org/wiki/${wikipedia}" target="_blank">Wiki</a></p>`) :
+                  ''
+                }
+              </div>`
+            return popupLayout
+          })
+          .bindTooltip(layer => layer.feature.properties.start_date)
       } else {
         this.geojsonLayer = L.featureGroup()
         builds.forEach(build => {
