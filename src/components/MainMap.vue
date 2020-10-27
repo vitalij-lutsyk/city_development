@@ -54,7 +54,7 @@ export default {
     createMap() {
       const { lat, lng, z } = this.startLocation
       this.mapFull = L.map('map', { renderer: L.canvas() }).setView([lat, lng], z)
-      L.tileLayer('http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png', {
+      L.tileLayer('http://www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(this.mapFull)
       this.updateUrlCoordinates()
