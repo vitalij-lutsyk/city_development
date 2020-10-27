@@ -3,6 +3,7 @@
 </template>
 
 <script>
+import getEpochWithStylesByYear from '../data/epoches'
 import L from 'leaflet'
 L.Icon.Default.imagePath = '.'
 delete L.Icon.Default.prototype._getIconUrl
@@ -44,16 +45,6 @@ export default {
     return {
       mapFull: null,
       geojsonLayer: null,
-      buildViewOptions: {
-        style: {
-          color: 'green',
-          fillColor: 'green',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.7,
-          stroke: true
-        }
-      }
     }
   },
   methods: {
@@ -105,7 +96,9 @@ export default {
         features: [...builds]
       }
       if (!this.isALotBuildings) {
-        this.geojsonLayer = L.geoJSON(geojson, this.buildViewOptions)
+        this.geojsonLayer = L.geoJSON(geojson, {
+          style: getEpochWithStylesByYear
+        })
           .bindPopup((layer) => {
             const {
               ['addr:housenumber']: housenumber,
@@ -114,8 +107,7 @@ export default {
               start_date,
               wikipedia
             } = layer.feature.properties;
-            const popupLayout =
-              `<div>
+            return `<div>
                 ${name ? (`<p>${name}</p>`) : ''}
                 <p>${street}, ${housenumber}</p>
                 ${
@@ -124,14 +116,16 @@ export default {
                   ''
                 }
               </div>`
-            return popupLayout
           })
           .bindTooltip(layer => layer.feature.properties.start_date)
       } else {
         this.geojsonLayer = L.featureGroup()
         builds.forEach(build => {
           const _coord = build.geometry.coordinates[0][0].reverse()
-          new L.circle(_coord, 2, this.buildViewOptions).addTo(this.geojsonLayer)
+          build.geometry.coordinates = _coord
+          build.geometry.type = "Point"
+          const circleStyle = getEpochWithStylesByYear(build)
+          new L.circle(_coord, 2, circleStyle).addTo(this.geojsonLayer)
         })
       }
       this.geojsonLayer.addTo(this.mapFull)
