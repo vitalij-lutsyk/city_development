@@ -12,14 +12,14 @@ L.Icon.Default.mergeOptions({
   iconUrl: require('leaflet/dist/images/marker-icon.png'),
   shadowUrl: require('leaflet/dist/images/marker-shadow.png')
 })
-import { mapState, mapActions } from 'vuex'
+import { mapState, mapGetters, mapActions } from 'vuex'
 import { setTimeout } from 'timers'
 export default {
   computed: {
     ...mapState({
       defaultStartPoint: state => state.defaultStartPoint,
-      filteredBuildings: state => state.filteredBuildings
     }),
+    ...mapGetters(['filteredBuildings']),
     isALotBuildings() {
       return this.filteredBuildings.length > 1000 && this.mapFull.getZoom() < 16
     },

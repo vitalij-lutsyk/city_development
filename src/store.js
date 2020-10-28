@@ -18,10 +18,17 @@ export default new Vuex.Store({
     downloaded: false,
     currentFilter: [0, 0],
     buildingYears: [],
-    filteredBuildings: []
   },
 
-  getters: {},
+  getters: {
+    filteredBuildings: state => {
+      if(!state.buildings.length) return []
+      return state.buildings.filter(build => {
+        return state.currentFilter[1] >= +build.properties.start_date &&
+        state.currentFilter[0] <= +build.properties.start_date
+      }
+    )}
+  },
 
   mutations: {
     mutate_buildings(state, val) {
@@ -39,30 +46,10 @@ export default new Vuex.Store({
     mutate_buildingYears(state, val) {
       const unickDates = val
         .map(el => {
-          return el.tags.start_date.length < 5 ? parseInt(el.tags.start_date) : null
+          return el.properties.start_date.length < 5 ? parseInt(el.properties.start_date) : null
         })
         .filter(el => el)
       state.buildingYears = [...new Set(unickDates)]
-    },
-    mutate_filteredBuildings(state) {
-      state.filteredBuildings = []
-      state.buildings.forEach(res => {
-        if (state.currentFilter[1] >= +res.tags.start_date && state.currentFilter[0] <= +res.tags.start_date) {
-          const filteredItem = {
-            type: 'Feature',
-            properties: { id: res.id, ...res.tags },
-            geometry: {
-              type: 'Polygon'
-            }
-          }
-          if (res.type === 'way') {
-            filteredItem.geometry.coordinates = [res.geometry.map(node => Object.values(node).reverse())]
-          } else if(res.type === 'relation') {
-            filteredItem.geometry.coordinates = [res.members.find(member => member.role === 'outer').geometry.map(node => Object.values(node).reverse())]
-          }
-          state.filteredBuildings.push(filteredItem)
-        }
-      })
     }
   },
   actions: {
@@ -74,7 +61,22 @@ export default new Vuex.Store({
           `${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedDataRules.map(rule => `${rule}(${state.bbox});`).join('')});${state.endParams};`
         )
         .then(res => {
-          commit('mutate_buildings', res.data.elements)
+          const preparedBuildings = res.data.elements.map(build => {
+            const preparedBuild = {
+              type: 'Feature',
+              properties: { id: build.id, ...build.tags },
+              geometry: {
+                type: 'Polygon'
+              }
+            }
+            if (build.type === 'way') {
+              preparedBuild.geometry.coordinates = [build.geometry.map(node => Object.values(node).reverse())]
+            } else if (build.type === 'relation') {
+              preparedBuild.geometry.coordinates = [build.members.find(member => member.role === 'outer').geometry.map(node => Object.values(node).reverse())]
+            }
+            return preparedBuild
+          }).filter(build => build);
+          commit('mutate_buildings', preparedBuildings)
           setTimeout(() => commit('mutate_downloaded', true), 100)
         })
         .then(() => commit('mutate_buildingYears', state.buildings))
@@ -90,7 +92,6 @@ export default new Vuex.Store({
 
     act_changeCurrentFilter({ commit }, payload) {
       commit('mutate_currentFilter', payload)
-      commit('mutate_filteredBuildings')
     }
   }
 })
