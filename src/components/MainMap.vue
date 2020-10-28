@@ -26,14 +26,21 @@ export default {
     startLocation() {
       const urlParametersRegex = /(\?|\&)([^=]+)\=([^&]+)/gi
       const digitsRegex = /[-]{0,1}[\d]*[.]{0,1}[\d]+/g
-      if (!window.location.search) {
-        return {
-          lat: this.defaultStartPoint[0],
-          lng: this.defaultStartPoint[1],
-          z: 17
-        }
+      const defaultLocation = {
+        lat: this.defaultStartPoint[0],
+        lng: this.defaultStartPoint[1],
+        z: 17
       }
-      const [lat, lng, z] = window.location.search.match(urlParametersRegex)
+      if (!window.location.search) {
+        return defaultLocation
+      }
+      const urlParameters = window.location.search.match(urlParametersRegex)
+      const lat = urlParameters.find(param => param.includes('lat'))
+      const lng = urlParameters.find(param => param.includes('lng'))
+      const z = urlParameters.find(param => param.includes('z'))
+      if (!lat || !lng || !z) {
+        return defaultLocation
+      }
       return {
         lat: +lat.match(digitsRegex)[0],
         lng: +lng.match(digitsRegex)[0],
