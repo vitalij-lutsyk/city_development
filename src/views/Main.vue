@@ -4,8 +4,8 @@
       <span style="margin-right: 2rem">Explore it</span>
       <span style="display: inline-block;transform: rotate(90deg)">=)</span>
     </div>
-    <main-map />
-    <main-ranger v-if="downloaded" />
+    <main-map :currentFilter="filter"/>
+    <main-ranger v-if="downloaded" @filterChange="handleFilterChange"/>
     <div class="preloader" v-if="!downloaded">
       <pulse-loader :loading="!downloaded"></pulse-loader>
     </div>
@@ -24,10 +24,20 @@ export default {
     MainRanger,
     PulseLoader
   },
+  data() {
+    return {
+      filter: [0, 0]
+    }
+  },
   computed: {
     ...mapState({
       downloaded: state => state.downloaded
     })
+  },
+  methods: {
+    handleFilterChange(value) {
+      this.filter = value
+    }
   }
 }
 </script>

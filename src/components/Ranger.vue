@@ -10,12 +10,13 @@
       range
       :marks="rangeLabels"
       height="400px"
+      @input="handleRangerChange"
     />
   </div>
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex'
+import { mapGetters } from 'vuex'
 export default {
   data() {
     return {
@@ -23,10 +24,7 @@ export default {
     }
   },
   computed: {
-    ...mapState({
-      currentFilter: state => state.currentFilter,
-      buildingYears: state => state.buildingYears
-    }),
+    ...mapGetters(['buildingYears']),
     mostOldest() {
       return Math.min(...this.buildingYears)
     },
@@ -47,18 +45,11 @@ export default {
     }
   },
   methods: {
-    ...mapActions({
-      changeCurrentFilter: 'act_changeCurrentFilter'
-    }),
     setInitialBuildings() {
-      this.changeCurrentFilter(this.mostYoungest)
-      this.filterValue = [this.mostOldest, this.mostYoungest]
-
-    }
-  },
-  watch: {
-    filterValue(newVal) {
-      this.changeCurrentFilter(newVal)
+      this.filterValue = [this.mostOldest || 0, this.mostYoungest || 0]
+    },
+    handleRangerChange(value) {
+      this.$emit('filterChange', value)
     }
   },
   created() {

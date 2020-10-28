@@ -10,14 +10,6 @@ import MainPage from '@/views/Main.vue'
 export default {
   components: {
     MainPage
-  },
-  methods: {
-    ...mapActions({
-      getBuildings: 'act_getBuildings'
-    })
-  },
-  created() {
-    this.getBuildings()
   }
 }
 </script>

@@ -15,13 +15,22 @@ L.Icon.Default.mergeOptions({
 import { mapState, mapGetters, mapActions } from 'vuex'
 import { setTimeout } from 'timers'
 export default {
+  props: {
+    currentFilter: Array
+  },
   computed: {
     ...mapState({
       defaultStartPoint: state => state.defaultStartPoint,
+      downloaded: state => state.downloaded,
+      buildings: state => state.buildings
     }),
-    ...mapGetters(['filteredBuildings']),
-    isALotBuildings() {
-      return this.filteredBuildings.length > 1000 && this.mapFull.getZoom() < 16
+    filteredBuildings() {
+      if(!this.buildings.length) return []
+      return this.buildings
+        .filter(build =>
+          this.currentFilter[1] >= +build.properties.start_date &&
+          this.currentFilter[0] <= +build.properties.start_date
+        )
     },
     startLocation() {
       const urlParametersRegex = /(\?|\&)([^=]+)\=([^&]+)/gi
@@ -29,7 +38,7 @@ export default {
       const defaultLocation = {
         lat: this.defaultStartPoint[0],
         lng: this.defaultStartPoint[1],
-        z: 17
+        zoom: 17
       }
       if (!window.location.search) {
         return defaultLocation
@@ -37,14 +46,14 @@ export default {
       const urlParameters = window.location.search.match(urlParametersRegex)
       const lat = urlParameters.find(param => param.includes('lat'))
       const lng = urlParameters.find(param => param.includes('lng'))
-      const z = urlParameters.find(param => param.includes('z'))
-      if (!lat || !lng || !z) {
+      const zoom = urlParameters.find(param => param.includes('zoom'))
+      if (!lat || !lng || !zoom) {
         return defaultLocation
       }
       return {
         lat: +lat.match(digitsRegex)[0],
         lng: +lng.match(digitsRegex)[0],
-        z: +z.match(digitsRegex)[0]
+        zoom: +zoom.match(digitsRegex)[0]
       }
     }
   },
@@ -56,16 +65,16 @@ export default {
   },
   methods: {
     ...mapActions({
-      changeBBox: 'act_changeBBox'
+      getBuildings: 'act_getBuildings'
     }),
     createMap() {
-      const { lat, lng, z } = this.startLocation
+      const { lat, lng, zoom } = this.startLocation
       this.mapFull = L.map(
         'map',
         {
           renderer: L.canvas()
         }
-      ).setView([lat, lng], z)
+      ).setView([lat, lng], zoom)
       L.tileLayer(
         'http://www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
         {
@@ -73,7 +82,6 @@ export default {
         }
       ).addTo(this.mapFull)
       this.updateUrlCoordinates()
-      this.changeBBox(this.calculateBBoxBounds())
       this.mapFull.on('dragend', this.handleMapMove)
       this.mapFull.on('zoomend', this.handleMapZoom)
     },
@@ -101,78 +109,76 @@ export default {
     handleMapMove() {
       this.updateUrlCoordinates()
       if (this.mapFull.getZoom() <= 13) return
-      this.changeBBox(this.calculateBBoxBounds())
+      this.getBuildings(this.getMapBoundaries())
+        .then(() => this.setBuildsAsGeoJsonLayer())
     },
     updateUrlCoordinates() {
       const { lat, lng } = this.mapFull.getCenter()
-      const searchString = `?lat=${lat}&lng=${lng}&z=${this.mapFull.getZoom()}`
+      const searchString = `?lat=${lat}&lng=${lng}&zoom=${this.mapFull.getZoom()}`
       history.pushState({}, null, this.$route.path + searchString)
     },
-    calculateBBoxBounds() {
+    getMapBoundaries() {
       return Object.values(this.mapFull.getBounds())
         .map(arr => Object.values(arr).map(val => val))
         .flat()
         .join(',')
     },
-    initCompositions() {
-      if (this.mapFull.hasLayer(this.geojsonLayer)) {
-        this.mapFull.removeLayer(this.geojsonLayer)
-      }
-      this.geojsonLayer = null
-      const builds = this.filteredBuildings
+    createPolygonsLayer() {
       const geojson = {
         type: 'FeatureCollection',
         crs: { type: 'name', properties: { name: 'urn:ogc:def:crs:OGC:1.3:CRS84' } },
-        features: [...builds]
+        features: [...this.filteredBuildings]
       }
-      if (!this.isALotBuildings) {
-        this.geojsonLayer = L.geoJSON(geojson, {
-          style: getEpochWithStylesByYear
+      const layer = L.geoJSON(geojson, {
+        style: getEpochWithStylesByYear
+      })
+        .bindPopup((layer) => {
+          const {
+            ['addr:housenumber']: housenumber,
+            ['addr:street']: street,
+            name,
+            start_date,
+            wikipedia
+          } = layer.feature.properties
+          return `<div>
+              ${name ? (`<p>${name}</p>`) : ''}
+              <p>${street}, ${housenumber}</p>
+              ${
+                wikipedia ?
+                (`<p><a href="https://wikipedia.org/wiki/${wikipedia}" target="_blank">Wiki</a></p>`) :
+                ''
+              }
+            </div>`
         })
-          .bindPopup((layer) => {
-            const {
-              ['addr:housenumber']: housenumber,
-              ['addr:street']: street,
-              name,
-              start_date,
-              wikipedia
-            } = layer.feature.properties
-            return `<div>
-                ${name ? (`<p>${name}</p>`) : ''}
-                <p>${street}, ${housenumber}</p>
-                ${
-                  wikipedia ?
-                  (`<p><a href="https://wikipedia.org/wiki/${wikipedia}" target="_blank">Wiki</a></p>`) :
-                  ''
-                }
-              </div>`
-          })
-          .bindTooltip(layer => layer.feature.properties.start_date)
-      } else {
-        this.geojsonLayer = L.featureGroup()
-        builds.forEach(build => {
-          const _coord = build.geometry.coordinates[0][0].reverse()
-          build.geometry.type = "Point"
-          const circleStyle = getEpochWithStylesByYear(build)
-          new L.circle(_coord, 2, circleStyle).addTo(this.geojsonLayer)
-        })
+        .bindTooltip(layer => layer.feature.properties.start_date)
+      return layer
+    },
+    setBuildsAsGeoJsonLayer() {
+      if (this.mapFull.hasLayer(this.geojsonLayer)) {
+        this.mapFull.removeLayer(this.geojsonLayer)
       }
+      this.geojsonLayer = this.createPolygonsLayer()
       this.geojsonLayer.addTo(this.mapFull)
     }
   },
   watch: {
-    filteredBuildings(newVal) {
-      this.initCompositions()
+    currentFilter(newVal) {
+      this.setBuildsAsGeoJsonLayer()
     }
   },
   mounted() {
     this.createMap()
     this.createLegend()
+    this.getBuildings(this.getMapBoundaries())
+      .then(() => this.setBuildsAsGeoJsonLayer())
   }
 }
 </script>
 
 <style lang="scss">
+.leaflet-tile.leaflet-tile-loaded {
+  opacity: 0.3 !important;
+}
 .legend {
   background-color: rgba(255, 255, 255, 0.6);
   padding: 5px;
