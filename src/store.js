@@ -9,9 +9,8 @@ export default new Vuex.Store({
     baseUrl: 'https://www.overpass-api.de/api/interpreter',
     expectedType: 'json',
     expectedDataRules: [
-      'way["building"="yes"]["start_date"]',
-      'way["building"="apartments"]["start_date"]',
-      'way["building"="residential"]["start_date"]'
+      'relation["building"]["start_date"]',
+      'way["building"]["start_date"]'
     ],
     bbox: '',
     endParams: 'out geom',
@@ -53,9 +52,13 @@ export default new Vuex.Store({
             type: 'Feature',
             properties: { id: res.id, ...res.tags },
             geometry: {
-              type: 'Polygon',
-              coordinates: [res.geometry.map(node => Object.values(node).reverse())]
+              type: 'Polygon'
             }
+          }
+          if (res.type === 'way') {
+            filteredItem.geometry.coordinates = [res.geometry.map(node => Object.values(node).reverse())]
+          } else if(res.type === 'relation') {
+            filteredItem.geometry.coordinates = [res.members.find(member => member.role === 'outer').geometry.map(node => Object.values(node).reverse())]
           }
           state.filteredBuildings.push(filteredItem)
         }
@@ -71,8 +74,7 @@ export default new Vuex.Store({
           `${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedDataRules.map(rule => `${rule}(${state.bbox});`).join('')});${state.endParams};`
         )
         .then(res => {
-          const filteredRes = res.data.elements.filter(el => el.type === 'way')
-          commit('mutate_results', filteredRes)
+          commit('mutate_results', res.data.elements)
           setTimeout(() => commit('mutate_downloaded', true), 100)
         })
         .then(() => commit('mutate_buildingYears', state.results))
