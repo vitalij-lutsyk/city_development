@@ -1,4 +1,4 @@
-const epochByFirstYear = {
+export const epochByFirstYear = {
   1256: {
     name: 'Середньовіччя',
     from: 1256,
@@ -78,7 +78,7 @@ const defaultStyle = {
   stroke: true
 }
 
-export default function getEpochWithStylesByYear(feature) {
+export const getEpochWithStylesByYear = function(feature) {
   const year = +feature.properties.start_date
   const type = feature.geometry.type
   if (type === 'Polygon') {

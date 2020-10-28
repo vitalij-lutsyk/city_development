@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import getEpochWithStylesByYear from '../data/epoches'
+import { getEpochWithStylesByYear, epochByFirstYear } from '../data/epoches'
 import L from 'leaflet'
 L.Icon.Default.imagePath = '.'
 delete L.Icon.Default.prototype._getIconUrl
@@ -53,14 +53,39 @@ export default {
     }),
     createMap() {
       const { lat, lng, z } = this.startLocation
-      this.mapFull = L.map('map', { renderer: L.canvas() }).setView([lat, lng], z)
-      L.tileLayer('http://www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(this.mapFull)
+      this.mapFull = L.map(
+        'map',
+        {
+          renderer: L.canvas()
+        }
+      ).setView([lat, lng], z)
+      L.tileLayer(
+        'http://www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
+        {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+      ).addTo(this.mapFull)
       this.updateUrlCoordinates()
       this.changeBBox(this.calculateBBoxBounds())
       this.mapFull.on('dragend', this.handleMapMove)
       this.mapFull.on('zoomend', this.handleMapZoom)
+    },
+    createLegend() {
+      const legend = L.control({position: 'bottomright'})
+      legend.onAdd = function(map) {
+        let div = L.DomUtil.create('div', 'info legend')
+        const content = Object.values(epochByFirstYear)
+          .map(item => `<div class="legend-item">`+
+                        `<div class="item-value" style="background-color:${item.color}">${item.from}-${item.to}</div>`+
+                        `<div class="item-name">${item.name}</div>`+
+                      `</div>`
+          )
+          .join('')
+        const contentWrapper = `<div class="legeng-content">${content}</div>`
+        div.innerHTML = contentWrapper
+        return div
+      }
+      legend.addTo(this.mapFull)
     },
     handleMapZoom() {
       this.updateUrlCoordinates()
@@ -78,9 +103,7 @@ export default {
     },
     calculateBBoxBounds() {
       return Object.values(this.mapFull.getBounds())
-        .map(arr => {
-          return Object.values(arr).map(val => val)
-        })
+        .map(arr => Object.values(arr).map(val => val))
         .flat()
         .join(',')
     },
@@ -106,7 +129,7 @@ export default {
               name,
               start_date,
               wikipedia
-            } = layer.feature.properties;
+            } = layer.feature.properties
             return `<div>
                 ${name ? (`<p>${name}</p>`) : ''}
                 <p>${street}, ${housenumber}</p>
@@ -122,7 +145,6 @@ export default {
         this.geojsonLayer = L.featureGroup()
         builds.forEach(build => {
           const _coord = build.geometry.coordinates[0][0].reverse()
-          build.geometry.coordinates = _coord
           build.geometry.type = "Point"
           const circleStyle = getEpochWithStylesByYear(build)
           new L.circle(_coord, 2, circleStyle).addTo(this.geojsonLayer)
@@ -138,6 +160,24 @@ export default {
   },
   mounted() {
     this.createMap()
+    this.createLegend()
   }
 }
 </script>
+
+<style lang="scss">
+.legend {
+  background-color: rgba(255, 255, 255, 0.6);
+  padding: 5px;
+  font-weight: 600;
+  .legend-item {
+    display: flex;
+    .item-value {
+      padding: 2px 5px;
+      margin-right: 5px;
+      color: #fff;
+    }
+    .item-name {}
+  }
+}
+</style>
