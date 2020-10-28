@@ -14,7 +14,7 @@ export default new Vuex.Store({
     ],
     bbox: '',
     endParams: 'out geom',
-    results: [],
+    buildings: [],
     downloaded: false,
     currentFilter: [0, 0],
     buildingYears: [],
@@ -24,8 +24,8 @@ export default new Vuex.Store({
   getters: {},
 
   mutations: {
-    mutate_results(state, val) {
-      state.results = val
+    mutate_buildings(state, val) {
+      state.buildings = val
     },
     mutate_downloaded(state, val) {
       state.downloaded = val
@@ -46,7 +46,7 @@ export default new Vuex.Store({
     },
     mutate_filteredBuildings(state) {
       state.filteredBuildings = []
-      state.results.forEach(res => {
+      state.buildings.forEach(res => {
         if (state.currentFilter[1] >= +res.tags.start_date && state.currentFilter[0] <= +res.tags.start_date) {
           const filteredItem = {
             type: 'Feature',
@@ -74,10 +74,10 @@ export default new Vuex.Store({
           `${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedDataRules.map(rule => `${rule}(${state.bbox});`).join('')});${state.endParams};`
         )
         .then(res => {
-          commit('mutate_results', res.data.elements)
+          commit('mutate_buildings', res.data.elements)
           setTimeout(() => commit('mutate_downloaded', true), 100)
         })
-        .then(() => commit('mutate_buildingYears', state.results))
+        .then(() => commit('mutate_buildingYears', state.buildings))
         .catch(err => console.log(err))
     },
 
