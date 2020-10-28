@@ -8,8 +8,11 @@ export default new Vuex.Store({
     defaultStartPoint: [49.8416169, 24.0312634],
     baseUrl: 'https://www.overpass-api.de/api/interpreter',
     expectedType: 'json',
-    expectedData: 'way["building"="yes"]["start_date"]',
-    sec: 'way["building"="apartments"]["start_date"]',
+    expectedDataRules: [
+      'way["building"="yes"]["start_date"]',
+      'way["building"="apartments"]["start_date"]',
+      'way["building"="residential"]["start_date"]'
+    ],
     bbox: '',
     endParams: 'out geom',
     results: [],
@@ -65,7 +68,7 @@ export default new Vuex.Store({
       if (!this.state.bbox) return
       axios
         .get(
-          `${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedData}(${state.bbox});${state.sec}(${state.bbox}););${state.endParams};`
+          `${state.baseUrl}?data=[out:${state.expectedType}];(${state.expectedDataRules.map(rule => `${rule}(${state.bbox});`).join('')});${state.endParams};`
         )
         .then(res => {
           const filteredRes = res.data.elements.filter(el => el.type === 'way')
